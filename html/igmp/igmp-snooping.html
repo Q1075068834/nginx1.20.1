@@ -1,0 +1,414 @@
+<script src="../html/utils/util.js"></script>
+
+<style type="text/css">
+    *{
+        margin: 0;
+        padding: 0;
+    }
+
+    .snooping {
+        margin-top: 10px;
+    }
+
+    .upData_Snooping_button{
+        cursor: pointer;
+    }
+
+    .upDataSnoopingModel{
+        margin: 0;
+        padding: 0;
+        display: none;
+        position: fixed;
+        background-color: #f2f2f2;
+        border-radius: 5px;
+        border: 1px solid #cccccc;
+        width: 500px;
+        min-height: 300px;
+        top: 30%;
+        left: 35%;
+        z-index: 1;
+    }
+    .snoopingModel_title{
+        margin: 0;
+        padding: 6px 0 0 15px;
+        color: #f2f2f2;
+        background-color: #668cf2;
+        border-bottom: 1px solid #cccccc;
+        width: 100%;
+        height: 50px;
+        line-height: 20px;
+    }
+    .snoopingModel_content{
+        padding: 15px;
+    }
+    .snoopingModel_content > div:not(:nth-child(1)){
+        margin-top: 10px;
+    }
+
+    .bg-box{
+        width: 50px;
+        height: 25px;
+        border-radius: 2px;
+        border: 1px solid #dadada;
+        position: relative;
+        display: inline-block;
+        margin: 15px 0 0 5px;
+    }
+
+    .move-box{
+        width: 25px;
+        height: 23px;
+        border-radius: 2px;
+        cursor: pointer;
+        background: #64c700;
+    }
+
+    .goTo{
+        position: absolute;
+        background: #c1c4c4;
+        left: 24px;
+        /*transform:translate(24px,0)*/
+    }
+
+
+    .goBack{
+        position: absolute;
+        background: #64c700;
+        left: 0;
+        /*transform:translate(0,0)*/
+    }
+
+    /*.move-box:active{*/
+    /*    background: #afa8b2;*/
+    /*    transform: translate(10px,0);*/
+    /*}*/
+
+
+    .snooping-success{
+        position: fixed;
+        bottom: 10px;
+        right: -300px;
+        width: 200px;
+        /*animation:Snooping-success 3s ease .1s infinite;*/
+    }
+    @keyframes snooping-success {
+        0%{right: -300px;}
+        100%{right: 10px;}
+    }
+
+    .errorShadow{
+        box-shadow:0 0 4px red;
+        border:none;
+    }
+
+</style>
+<script type='text/javascript'>
+    let SnoopingInfo =[];
+
+
+    const checkSnooping = {};
+
+    let upDataInfo={};
+    let total = 62;
+    let current = 1;
+    let pageSize = 10;
+
+    const editionData =[
+        {id:'V1', value:'V1'},
+        {id:'V2', value:'V2'},
+        {id:'V3', value:'V3'}];
+
+    function intoSelect(data,selector){
+        return $.each(data,function (i,val) {
+            let selectorPro = $(selector);
+            selectorPro.append(document.createElement("option"));
+            $(selector).find("option").eq(i).append(val.value).attr("value",val.id)
+        });
+    }
+
+    $(document).ready(function () {
+        getAjaxData(getInitValue);
+        intoSelect(editionData,"#edition");
+    });
+
+    function getAjaxData (callback){
+        $.ajax({
+            type : "GET",
+            contentType: "application/json;charset=UTF-8",
+            url : `http://${$.getIp}/action/igmp`,
+            success : function(result) {
+                console.log(result);
+                SnoopingInfo = result.vlans;
+                checkSnooping.a = !!(result && result.igmpEnable === 0);
+                checkSnooping.b = !!(result && result.castPacket === 0);
+                callback();
+                if(!checkSnooping.a){
+                    $("#IGMP").addClass("goTo").removeClass("goBack")
+                }else {
+                    $("#IGMP").addClass("goBack").removeClass("goTo")
+                }
+
+                if(!checkSnooping.b){
+                    $("#unKnow").addClass("goTo").removeClass("goBack")
+                }else {
+                    $("#unKnow").addClass("goBack").removeClass("goTo")
+                }
+            },
+            //请求失败，包含具体的错误信息
+            error : function(e){
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        });
+    }
+
+    function getPagination() {
+        let NumberPages = Math.ceil(total/pageSize);
+        for(let i = 0; i<NumberPages;i++){
+            $("#snoopingPagination").append("<li><a href='#' class='page_change'></a></li>")
+                .find("a").eq(i).append(i+1)
+        }
+        $("#snoopingPagination").find("li").eq(0).attr("class","active");
+        $(".page_change").on("click",function(obj){
+            $("#snoopingPagination").find("li").removeClass("active");
+            $(this).parent().attr("class","active");
+            current=$(this).text();
+        });
+    }
+
+    function changeName (data){
+        let newArr=[];
+        $.each(data, function(i,val){
+            if(val.edition===1){
+                val.edition= 'V1'
+            } if(val.edition===2){
+                val.edition= 'V2'
+            } if(val.edition===3){
+                val.edition= 'V3'
+            }
+            newArr.push(val)
+        });
+        return newArr
+    }
+
+    function getInitValue() {
+        let devTable = $("#devTable");
+        devTable.empty("");
+        devTable.append('<tr>' +
+            '<th>VLAN ID</th>' +
+            '<th>IGMP snooping</th>' +
+            '<th>版本</th>' +
+            '<th>路由器老化时间</th>' +
+            '<th>成员端口老化时间</th>' +
+            '<th>离开组时间</th>' +
+            '<th>操作</th>' +
+            '</tr>');
+        let newArr = changeName(SnoopingInfo);
+        $.each(newArr, function(i,val){
+            const aa = '<tr id="init">'
+                + '<td>' + val.vLanId + '</td>'
+                + '<td>' + val.IGMPSnooping + '</td>'
+                + '<td>' + val.edition + '</td>'
+                + '<td>' + val.routerTime + "秒"+ '</td>'
+                + '<td>' + val.memberTime + "秒"+'</td>'
+                + '<td>' + val.leaveTime + "秒"+'</td>'
+                + '<td><a class="upData_Snooping_button">修改</a> </td>'
+                + '</tr>';
+            devTable.append(aa);
+        });
+
+        $(".upData_Snooping_button").on("click",function(obj){
+            const mark = document.createElement("div");
+            mark.id='mark';
+            $("body").append(mark);
+            $("#mark").css("width","100%")
+                .css("height","1000px")
+                .css("background","#000000")
+                .css("position","absolute")
+                .css("top","0px")
+                .css("z-index",0)
+                .css("opacity","0.2")
+                .css("left","0px");
+            let vLanId = $(this).parent().parent().children(":first").text();
+            let IGMPSnooping = $(this).parent().parent().children(":nth-child(2)").text();
+            let edition = $(this).parent().parent().children(":nth-child(3)").text();
+            let routerTime = $(this).parent().parent().children(":nth-child(4)").text()
+                .slice(0,$(this).parent().parent().children(":nth-child(4)").text().length-1);
+            let memberTime = $(this).parent().parent().children(":nth-child(5)").text()
+                .slice(0,$(this).parent().parent().children(":nth-child(5)").text().length-1);
+            let leaveTime = $(this).parent().parent().children(":nth-child(6)").text()
+                .slice(0,$(this).parent().parent().children(":nth-child(6)").text().length-1);
+            upDataInfo.sort = $(this).parent().parent().index();
+            $(".snooping-success").css("animation","none").empty();
+            $("#vLanId").val(vLanId);
+            $("#IGMPSnooping").val(IGMPSnooping);
+            $("#edition").val(edition);
+            $("#routerTime").val(routerTime);
+            $("#memberTime").val(memberTime);
+            $("#leaveTime").val(leaveTime);
+            $(".upDataSnoopingModel").fadeIn()
+        });
+    }
+
+    function updataSnooping() {
+        let errorRouter =$(".routerTime-maxLengthError");
+        let errorMember =$(".memberTime-maxLengthError");
+        let errorLeave =$(".leaveTime-maxLengthError");
+        if( errorRouter.text()!=='' || errorMember.text()!=='' || errorLeave.text()!=='' ){
+            alert('请输入正确的信息')
+        } else {
+            let vLanId = $("#vLanId").val();
+            let IGMPSnooping = $("#IGMPSnooping").val();
+            let edition = $("#edition  option:selected").val();
+            let routerTime = $("#routerTime").val();
+            let memberTime = $("#memberTime").val();
+            let leaveTime = $("#leaveTime").val();
+            // let portType = $("#portType  option:selected").val();
+            let editionName = {};
+            if(edition==='V1') {
+                editionName.edition = 'V1'
+            }
+            if(edition==='V2') {
+                editionName.edition = 'V2'
+            }
+            if(edition==='V3') {
+                editionName.edition = 'V3'
+            }
+            const params ={
+                vLanId:vLanId,
+                IGMPSnooping:IGMPSnooping,
+                edition:editionName.edition,
+                routerTime:routerTime,
+                memberTime:memberTime,
+                leaveTime:leaveTime
+            };
+            SnoopingInfo.splice(upDataInfo.sort-1,1,params);
+            $(".upDataSnoopingModel").fadeOut();
+            $(".snooping-success").css("animation","snooping-success 2s ease 0s").append("保存成功");
+            getInitValue();
+            $("#mark").remove()
+        }
+    }
+
+    function closeAddModel(type) {
+        if(type==="add"){
+            $(".SnoopingModel").fadeOut()
+        }
+        if(type==="upData"){
+            $(".upDataSnoopingModel").fadeOut();
+            $("#mark").remove()
+        }
+    }
+
+    function changeState (id) {
+        $(".snooping-success").css("animation","none").empty();
+        const params = {};
+        let ids = $(`#${id}`);
+        if( !ids.hasClass("goTo")){
+            if(id==='IGMP'){
+                params.igmpEnable = 1;
+            }else params.castPacket= 1;
+            ids.removeClass("goBack").addClass("goTo");
+        } else {
+            if(id==='IGMP'){
+                params.igmpEnable = 0;
+            }else params.castPacket= 0;
+            ids.removeClass("goTo").addClass("goBack")
+        }
+        $.ajax({
+            type : "POST",
+            contentType: "application/json;charset=UTF-8",
+            url : `http://${$.getIp}/action/igmp`,
+            data : JSON.stringify(params),
+            success : function(result) {
+                console.log(result);
+                getAjaxData(getInitValue);
+                $(".snooping-success").css("animation","snooping-success 2s ease 0s").append("修改成功");
+            },
+            //请求失败，包含具体的错误信息
+            error : function(e){
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        });
+    }
+
+</script>
+<div class="page-header">
+    <h2> igmp-snooping配置 <small> igmp-snooping </small></h2>
+</div>
+<div style="width: 100%; height: 80px;line-height: 80px">
+
+    <div style="display: inline-block">
+        <div style="display: inline-block;">IGMP snooping:</div>
+        <div class="bg-box" onclick="changeState('IGMP')">
+            <div class="move-box" id="IGMP"></div>
+        </div>
+    </div>
+    <div style="display: inline-block;margin-left: 50px">丢弃未知组播数据报文:
+        <div class="bg-box" onclick="changeState('unKnow')">
+            <div class="move-box" id="unKnow"></div>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">VLan配置</h3>
+        </div>
+
+        <table class="table snooping" id="devTable"></table>
+
+    </div>
+    <nav aria-label="Page navigation" style="float: right">
+        <ul class="pagination pagination-sm" id="snoopingPagination"></ul>
+    </nav>
+
+</div>
+<div class="upDataSnoopingModel">
+    <div class="snoopingModel_title">
+        <h4 style="display: inline-block">修改</h4>
+        <span style=" display: inline-block;margin-left: 410px;cursor: pointer"
+              class="glyphicon glyphicon-remove"
+              onclick="closeAddModel('upData')"
+              aria-hidden="true"></span>
+    </div>
+    <div class="snoopingModel_content">
+        <div style="display: inline-block;width: 49.5%">
+            <label for="vLanId">VLAN ID</label>
+            <input type="text" class="form-control" placeholder="" id="vLanId" >
+        </div>
+        <div style="display: inline-block;width: 49.5%">
+            <label for="IGMPSnooping">IGMP snooping</label>
+            <select  class="form-control" id="IGMPSnooping" ></select>
+        </div>
+        <div style="display: inline-block;width: 49.5%">
+            <label for="edition">版本</label>
+            <select  class="form-control" id="edition" ></select>
+        </div>
+        <div style="display: inline-block;width: 49.5%">
+            <label for="routerTime">路由器老化时间 </label>
+            <input class="form-control"
+                   onchange="$.verificationNum('#routerTime','.routerTime-maxLengthError',null,null)"
+                   id="routerTime" />
+            <div class="routerTime-maxLengthError"></div>
+        </div>
+        <div style="display: inline-block;width: 49.5%">
+            <label for="memberTime">成员端口老化时间</label>
+            <input class="form-control"
+                   onchange="$.verificationNum('#memberTime','.memberTime-maxLengthError',null,null)"
+                   id="memberTime" />
+            <div class="memberTime-maxLengthError"></div>
+        </div>
+        <div style="display: inline-block;width: 49.5%">
+            <label for="leaveTime">离开组时间</label>
+            <input class="form-control"
+                   onchange="$.verificationNum('#leaveTime','.leaveTime-maxLengthError',null,null)"
+                   id="leaveTime" />
+            <div class="leaveTime-maxLengthError"></div>
+        </div>
+        <div style="padding-left: 44%;margin-top: 15px">
+            <button class="btn btn-default"  type="submit"  onclick="updataSnooping()">保存</button>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-success snooping-success" role="alert"></div>

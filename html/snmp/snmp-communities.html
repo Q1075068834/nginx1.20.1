@@ -1,0 +1,275 @@
+<style type="text/css">
+
+    .snmpTable {
+        margin-top: 10px;
+    }
+
+    .initInput{
+        border: none;
+        box-shadow: none;
+    }
+
+    .active{
+        color: #ffffff;
+        background-color: #64c700;
+    }
+
+    .upData_button,.delete_button {
+        cursor: pointer;
+    }
+
+    .upDataSnmpModel{
+        margin: 0;
+        padding: 0;
+        display: none;
+        position: fixed;
+        background-color: #f2f2f2;
+        border-radius: 5px;
+        border: 1px solid #cccccc;
+        width: 300px;
+        height: 150px;
+        top: 30%;
+        left: 40%;
+        z-index: 1;
+    }
+    .snmpModel_title{
+        margin: 0;
+        padding: 6px 0 0 15px;
+        color: #f2f2f2;
+        background-color: #668cf2;
+        border-bottom: 1px solid #cccccc;
+        width: 100%;
+        height: 50px;
+        line-height: 20px;
+    }
+    .snmpModel_content{
+        padding: 15px;
+    }
+
+</style>
+<script type='text/javascript'>
+    let getCommunitiesData =[];
+
+    const ruleInfo =[{
+        id:1,
+        value:"只读"
+    },{
+        id:2,
+        value:"读写"
+    }];
+
+    let upDataResult;
+
+
+
+    function setGroupName(ruleData,communitiesData){
+        $.each(communitiesData, function(i,val){
+            $.each(ruleData,function (index,ele) {
+                $(`#queryRuleCheck_${i}`).append("<span></span>").find("span").eq(index)
+                    .attr("id",`item_${i}_${index}`)
+                    .attr("value",index+1)
+                    .css("width","45px")
+                    .css("height","26px")
+                    .css("line-height","26px")
+                    .css("float","left")
+                    .css("margin-top","15px")
+                    .css("margin-left","10px")
+                    .css("border-radius","2px")
+                    .css("cursor","pointer")
+                    .css("border","1px solid #cccccc")
+                    .append(ele.value)
+                    .css("text-align","center")
+                    .on("click", function () {
+                        $(`#queryRuleCheck_${i}`).find("span").removeClass("active");
+                        $(this).addClass("active");
+                        communitiesData[i].rule=$(this).attr("value")
+                        console.log(communitiesData)
+                    });
+            })
+        });
+    }
+
+    function getAjaxData (callback){
+        $.ajax({
+            type : "GET",
+            contentType: "application/json;charset=UTF-8",
+            url : `https://api.apiopen.top/getJoke`,
+            //数据，json字符串
+            // data : {
+            //     ...params
+            // },
+            //请求成功
+            success : function(result) {
+                console.log(result.result[0]);
+                const params=[];
+                let count=0;
+                for (let i = 0 ; i<10;++i){
+                    params.push({
+                        groupName:`name${count++}`,
+                        rule:1,
+                        Mib:`Mib${count++}`,
+                        Acl:`Acl${count++}`
+                    })
+                }
+                getCommunitiesData=params;
+                callback();
+            },
+            //请求失败，包含具体的错误信息
+            error : function(e){
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        });
+    }
+
+
+    function initInfo(){
+        getCommunitiesInitValue();
+        setGroupName(ruleInfo,getCommunitiesData);
+        $.each(getCommunitiesData, function(i,val){
+            if(getCommunitiesData[i].rule===1){
+                $(`#item_${i}_0`).addClass("active")
+            }
+            if(getCommunitiesData[i].rule===2){
+                $(`#item_${i}_1`).addClass("active");
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        getAjaxData(initInfo);
+    });
+
+    function getCommunitiesInitValue() {
+        let snmpCommunitiesTable = $("#snmpCommunitiesTable");
+        snmpCommunitiesTable.empty("");
+        snmpCommunitiesTable.append('<tr>' +
+            '<th>团体名称</th>' +
+            '<th>访问规则</th>' +
+            '<th>MIB视图</th>' +
+            '<th>ACL</th>' +
+            '<th>操作</th>' +
+            '</tr>');
+        $.each(getCommunitiesData, function(i,val){
+            const aa = '<tr class="communitiesTr">'
+                + '<td class="groupName"><input type="text" class="form-control groupNameInput" style="cursor: pointer"/></td>'
+                + '<td class="queryRule"></td>'
+                + '<td class="Mib"><input type="text" class="form-control mibInput" style="cursor: pointer"/></td>'
+                + '<td class="Acl"><input type="text" class="form-control AclInput" style="cursor: pointer"/></td>'
+                + '<td><a class="upData_button">修改</a> <a class="delete_button">删除</a></td>'
+                + '</tr>';
+            snmpCommunitiesTable.append(aa);
+            $('.groupNameInput').eq(i).val(val.groupName).addClass("initInput");
+            $('.mibInput').eq(i).val(val.Mib).addClass("initInput");
+            $('.AclInput').eq(i).val(val.Acl).addClass("initInput");
+            $('.queryRule').eq(i).attr("id",`queryRuleCheck_${i}`);
+        });
+
+        $(".delete_button").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().parent().index();
+            that.parent().parent().remove();
+            getCommunitiesData.splice(index-1,1);
+            console.log(getCommunitiesData)
+            getCommunitiesInitValue();
+            setGroupName(ruleInfo,getCommunitiesData);
+            $.each(getCommunitiesData, function(i,val){
+                if(getCommunitiesData[i].rule===1){
+                    $(`#item_${i}_0`).addClass("active")
+                }
+                if(getCommunitiesData[i].rule===2){
+                    $(`#item_${i}_1`).addClass("active");
+                }
+            });
+        });
+
+        $(".upData_button").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().parent().index();
+            upDataResult=getCommunitiesData[index-1];
+
+            const mark = document.createElement("div")
+            mark.id='mark';
+            $("body").append(mark);
+            $("#mark").css("width","100%")
+                .css("height","1000px")
+                .css("background","#000000")
+                .css("position","absolute")
+                .css("top","0px")
+                .css("z-index",0)
+                .css("opacity","0.2")
+                .css("left","0px");
+            $(".upDataSnmpModel").fadeIn()
+        });
+
+        $(".groupName").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.groupNameInput').eq(index-1).blur(function() {
+                let upDataValue = $('.groupNameInput').eq(index-1).val();
+                getCommunitiesData[index-1].groupName=upDataValue
+            }).css("border","none");
+
+        });
+
+        $(".Mib").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.mibInput').eq(index-1).blur(function() {
+                let upDataValue = $('.mibInput').eq(index-1).val();
+                getCommunitiesData[index-1].Mib=upDataValue
+            }).css("border","none");
+        });
+
+        $(".Acl").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.AclInput').eq(index-1).blur(function() {
+                let upDataValue = $('.AclInput').eq(index-1).val();
+                getCommunitiesData[index-1].Acl=upDataValue
+            }).css("border","none");
+        })
+    }
+    function closeAddModel() {
+        $(".upDataSnmpModel").fadeOut();
+        $("#mark").remove()
+    }
+
+    function upDataSnmpCommunities() {
+        console.log( upDataResult );
+    }
+
+</script>
+
+
+
+<div class="page-header">
+    <h2> SNMP Communities <small> SNMP Communities </small></h2>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading" style="height:40px">
+        <h3 class="panel-title" style="float: left">团体设置</h3>
+    </div>
+    <table class="table snmpTable" id="snmpCommunitiesTable"></table>
+</div>
+
+<div class="upDataSnmpModel">
+    <div class="snmpModel_title">
+        <h4 style="display: inline-block">修改</h4>
+        <span style="
+                  display: inline-block;
+                  margin-left: 210px;
+                  cursor: pointer"
+              class="glyphicon glyphicon-remove"
+              onclick="closeAddModel()"
+              aria-hidden="true"></span>
+    </div>
+    <div class="snmpModel_content">
+        确定修改吗?
+        <div style="margin-left: 130px">
+            <button class="btn btn-default" type="submit"  onclick="upDataSnmpCommunities()">确定</button>
+            <button class="btn btn-default" type="submit"  onclick="closeAddModel()">取消</button>
+        </div>
+    </div>
+</div>

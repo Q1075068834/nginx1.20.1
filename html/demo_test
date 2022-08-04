@@ -1,0 +1,58 @@
+        [{
+                     id:1,
+                     describe:'test',
+                     portMember:''
+                 },{
+                     id:2,
+                     describe:'test2',
+                     portMember:''
+                 }]
+
+                     class Dc {
+                             constructor(a,b){
+                                 this.a= a;
+                                 this.b= b
+                             }
+
+                             add() {
+                               return  this.a + this.b
+                             }
+                         }
+
+                         let m = new Dc(1,2);
+                         console.log(m.add());
+
+                         $("#line-block")
+                             .css("width","50px")
+                             .css("height","50px")
+                             .css("background-color","black")
+                             .on("mouseover",function() {
+                             $(this).css({
+                                 'cursor': 'move'
+                             }) // 光标替换
+                         }).on("mousedown", function(e) {
+                             // 点击位置
+                             var downX = e.pageX;
+                             var downY = e.pageY;
+                             console.log(downX)
+                             // 元素原来左上角位置
+                             var thisX = $(this).offset().left;
+                             var thisY = $(this).offset().top;
+                             $(this).on("mousemove",function(e) {
+                                 // 当前位置 = 原位置+移动位置-点击位置
+                                 var left = thisX + e.pageX - downX >345 && thisX + e.pageX - downX < 545 ?
+                                     thisX + e.pageX - downX:
+                                     thisX + e.pageX - downX>545? 545:
+                                         thisX + e.pageX - downX <345?345:thisX + e.pageX - downX;
+                                 var top = 228;
+                                 $(this).css({
+                                     'left': left,
+                                     'top': top
+                                 });
+                                 setRect(left-100,left-100)
+                             });
+                             //解绑移动事件。
+                             $(this).on('mouseup mouseleave', function() {
+                                 $(this).off('mousemove')
+                             })
+                         })

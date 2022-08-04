@@ -1,0 +1,253 @@
+<script src="../html/utils/util.js"></script>
+
+<style type="text/css">
+
+    .snmpTable {
+        margin-top: 10px;
+    }
+
+    .bg-box{
+        width: 50px;
+        height: 25px;
+        border-radius: 2px;
+        border: 1px solid #dadada;
+        position: relative;
+        display: inline-block;
+        margin: 15px 0 0 5px;
+    }
+
+    .move-box{
+        width: 25px;
+        height: 23px;
+        border-radius: 2px;
+        cursor: pointer;
+        background: #64c700;
+    }
+
+    .goTo{
+        position: absolute;
+        background: #c1c4c4;
+        left: 24px;
+        /*transform:translate(24px,0)*/
+    }
+
+
+    .goBack{
+        position: absolute;
+        background: #64c700;
+        left: 0;
+        /*transform:translate(0,0)*/
+    }
+
+    .active{
+        color: #ffffff;
+        background-color: #64c700;
+    }
+
+    .errorShadow{
+        box-shadow:0 0 4px red;
+        border:none;
+    }
+
+</style>
+<script type='text/javascript'>
+
+    const snmpConfigInfo ={
+        snmp:false,
+        snmpEdition:3,
+        localEngine:'abc',
+        contactInformation:'bbc',
+        maxLength:2220,
+        positionInformation:'塔山'
+    };
+
+    const snmpConfigTableInfo =[
+        { snmpStatisticalInformation:1212,snmpStatisticalValue:121212 },
+        { snmpStatisticalInformation:1212,snmpStatisticalValue:121212 },
+        { snmpStatisticalInformation:1212,snmpStatisticalValue:121212 }
+    ];
+
+    const checkEditionInfo =[{
+        id:1,
+        value:"V1"
+    },{
+        id:2,
+        value:"V2"
+    },{
+        id:3,
+        value:"V3"
+    }];
+
+
+    function setEdition(data){
+        $.each(data, function(i,val){
+            let item = document.createElement("div");
+            $("#checkEdition").append(item).find("div").eq(i)
+                .attr("id",`item_${i}`)
+                .attr("value",i+1)
+                .css("width","45px")
+                .css("height","26px")
+                .css("line-height","26px")
+                .css("float","left")
+                .css("margin-top","15px")
+                .css("margin-left","10px")
+                .css("border-radius","2px")
+                .css("cursor","pointer")
+                .css("border","1px solid #cccccc")
+                .append(val.value)
+                .css("text-align","center")
+                .on("click", function () {
+                    $("#checkEdition").find("div").removeClass("active");
+                    $(this).addClass("active");
+                    snmpConfigInfo.snmpEdition=$(this).attr("value")
+                });
+        });
+    }
+
+    $(document).ready(function () {
+        setEdition(checkEditionInfo);
+        getSnmpConfigInitValue();
+        getTableInitValue();
+    });
+
+    function getSnmpConfigInitValue() {
+        try{
+            if(!snmpConfigInfo.snmp){
+                $("#snmp").addClass("goTo").removeClass("goBack")
+            }else {
+                $("#snmp").addClass("goBack").removeClass("goTo")
+            }
+            $(`#item_${snmpConfigInfo.snmpEdition-1}`).addClass("active");
+            $("#localEngine").val(snmpConfigInfo.localEngine);
+            $("#contactInformation").val(snmpConfigInfo.contactInformation);
+            $("#maxLength").val(snmpConfigInfo.maxLength);
+            $("#positionInformation").val(snmpConfigInfo.positionInformation)
+        }catch (error) {
+            console.log(error)
+        }
+    }
+
+
+    function getTableInitValue() {
+        let snmpStatisticalTable = $("#snmpStatisticalTable");
+        snmpStatisticalTable.empty("");
+        snmpStatisticalTable.append('<tr>' +
+            '<th>SNMP统计信息</th>' +
+            '<th>统计值</th>' +
+            '</tr>');
+        $.each(snmpConfigTableInfo, function(i,val){
+            const aa = '<tr id="init">'
+                + '<td>' + val.snmpStatisticalInformation + '</td>'
+                + '<td>' + val.snmpStatisticalValue + '</td>'
+                + '</tr>';
+            snmpStatisticalTable.append(aa);
+        });
+    }
+
+    function changeState (id) {
+        $(".Snooping-success").css("animation","none").empty();
+        const params = {};
+        let ids = $(`#${id}`);
+        if( !ids.hasClass("goTo")){
+            params.state =false;
+            ids.removeClass("goBack").addClass("goTo");
+        } else {
+            params.state =true;
+            ids.removeClass("goTo").addClass("goBack")
+        }
+        snmpConfigInfo.snmp=params.state
+    }
+
+    function upDataSnmpConfig() {
+        let errorBox =$(".maxLengthError");
+        if(errorBox.text()!==null && errorBox.text() !== "" ){
+            alert('请输入正确的信息')
+        }else {
+            console.log(snmpConfigInfo)
+        }
+    }
+
+    function refresh() {
+        getTableInitValue()
+    }
+
+
+
+</script>
+
+<div class="page-header">
+    <h2> SNMP Config <small> SNMP Config </small></h2>
+</div>
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">SNMP Agent设置</h3>
+    </div>
+    <div class="row" style="padding:0 0  20px 40px">
+        <div class="col-md-6">
+            <label for="snmp" style="float: left;margin-top: 18px">snmp:</label>
+            <div style="float: left;margin-left: 31px">
+                <div class="bg-box"  onclick="changeState('snmp')">
+                    <div class="move-box" id="snmp"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <label style="float: left;margin-top: 18px">snmp版本:</label>
+            <div style="float: left">
+                <div id="checkEdition"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" style="padding:0 0  20px 40px">
+        <div class="col-md-6">
+            <label for="localEngine" style="float: left;margin-top: 18px">本地引擎ID:</label>
+            <input type="text"
+                   style="float: left; width: 300px; margin: 10px 0 0 5px ;"
+                   class="form-control"
+                   placeholder=""
+                   id="localEngine" >
+        </div>
+        <div class="col-md-6">
+            <label for="contactInformation" style="float: left;margin-top: 18px">联系信息:</label>
+            <input type="text"
+                   style="float: left; width: 300px; margin: 10px 0 0 5px ;"
+                   class="form-control"
+                   placeholder=""
+                   id="contactInformation" >
+        </div>
+    </div>
+
+    <div class="row" style="padding:0 0  20px 40px">
+        <div class="col-md-6">
+            <label for="maxLength" style="float: left;margin-top: 18px">最大包长度:</label>
+            <input type="text"
+                   style="float: left; width: 300px; margin: 10px 0 0 5px ;"
+                   class="form-control"
+                   placeholder=""
+                   onchange="$.verificationNum('#maxLength','.maxLengthError',484,17940)"
+                   id="maxLength" ><div class="maxLengthError"></div>
+        </div>
+        <div class="col-md-6">
+            <label for="positionInformation" style="float: left;margin-top: 18px">位置信息:</label>
+            <input type="text"
+                   style="float: left; width: 300px; margin: 10px 0 0 5px ;"
+                   class="form-control"
+                   placeholder=""
+                   id="positionInformation" >
+            <button class="btn btn-primary"
+                    id="save-button"
+                    onclick="upDataSnmpConfig()"
+                    style="float: right; margin: 10px 10px 0 5px ;">保存</button>
+        </div>
+    </div>
+</div>
+<div class="panel panel-default">
+    <div class="panel-heading" style="height:40px">
+        <h3 class="panel-title" style="float: left">SNMP统计信息</h3>
+        <button onclick="refresh()"
+                class="btn btn-default"
+                style="float: right;width: 50px; height: 22px;display: flex;justify-content: center; align-items: center">刷新</button>
+    </div>
+    <table class="table snmpTable" id="snmpStatisticalTable"></table>
+</div>

@@ -1,0 +1,420 @@
+<script src="../html/utils/util.js"></script>
+
+<style type="text/css">
+
+    .snmpTable {
+        margin-top: 10px;
+    }
+
+    .initInput{
+        border: none;
+        box-shadow: none;
+    }
+
+    .active{
+        color: #ffffff;
+        background-color: #64c700;
+    }
+
+    .upData_button,.delete_button {
+        cursor: pointer;
+    }
+
+    .upDataSnmpModel{
+        margin: 0;
+        padding: 0;
+        display: none;
+        position: fixed;
+        background-color: #f2f2f2;
+        border-radius: 5px;
+        border: 1px solid #cccccc;
+        width: 300px;
+        height: 150px;
+        top: 30%;
+        left: 40%;
+        z-index: 1;
+    }
+    .snmpModel_title{
+        margin: 0;
+        padding: 6px 0 0 15px;
+        color: #f2f2f2;
+        background-color: #668cf2;
+        border-bottom: 1px solid #cccccc;
+        width: 100%;
+        height: 50px;
+        line-height: 20px;
+    }
+    .snmpModel_content{
+        padding: 15px;
+    }
+
+</style>
+<script type='text/javascript'>
+    let getGroupData =[];
+    let checkGroup =[];
+
+    const ruleInfo =[
+        {id:1, value:"不认证不加密"},
+        {id:2, value:"只认证不加密"},
+        {id:2, value:"既认证又加密"}];
+
+    let upDataResult;
+    let total = 0;
+    let current = 1;
+    let pageSize = 10;
+
+    function initPagination(total,pageSize) {
+        let NumberPages = Math.ceil(total/pageSize);
+        let target =  $("#snmpGroupPagination");
+        target.empty();
+        for(let i = 0; i<NumberPages;i++){
+            target.append("<li><a href='#' class='page_change'></a></li>")
+                .find("a").eq(i).append(i+1)
+        }
+        target.find("li").eq(0).attr("class","active");
+        $(".page_change").on("click",function(obj){
+            target.find("li").removeClass("active");
+            $(this).parent().attr("class","active");
+            current=$(this).text();
+            getGroupInitValue();
+            setGroupName(ruleInfo,getGroupData);
+            $.each(getGroupData[current-1], function(i,val){
+                if(getGroupData[current-1][i].level===1){
+                    $(`#item_${i}_0`).addClass("active")
+                }
+                if(getGroupData[current-1][i].level===2){
+                    $(`#item_${i}_1`).addClass("active");
+                }
+                if(getGroupData[current-1][i].level===3){
+                    $(`#item_${i}_2`).addClass("active");
+                }
+            });
+        });
+    }
+
+    function pagingProcessing( data, pageSize ) {
+        let index = 0;
+        let newArray = [];
+        while(index < data.length) {
+            newArray.push(data.slice(index, index += pageSize));
+        }
+        return newArray;
+    }
+
+    function setGroupName(ruleData,GroupData){
+        $.each(GroupData[current-1], function(i,val){
+            $.each(ruleData,function (index,ele) {
+                $(`#securityLevelCheck_${i}`).append("<span></span>").find("span").eq(index)
+                    .attr("id",`item_${i}_${index}`)
+                    .attr("value",index+1)
+                    .css("width","100px")
+                    .css("height","26px")
+                    .css("line-height","26px")
+                    .css("float","left")
+                    .css("margin-top","15px")
+                    .css("margin-left","10px")
+                    .css("border-radius","2px")
+                    .css("cursor","pointer")
+                    .css("border","1px solid #cccccc")
+                    .append(ele.value)
+                    .css("text-align","center")
+                    .on("click", function () {
+                        $(`#securityLevelCheck_${i}`).find("span").removeClass("active");
+                        $(this).addClass("active");
+                        GroupData[i].level=$(this).attr("value");
+                        console.log(GroupData)
+                    });
+            })
+        });
+    }
+
+    function getAjaxData (callback){
+        $.ajax({
+            type : "GET",
+            contentType: "application/json;charset=UTF-8",
+            url : `https://api.apiopen.top/getJoke`,
+            //数据，json字符串
+            // data : {
+            //     ...params
+            // },
+            //请求成功
+            success : function(result) {
+                console.log(result.result);
+                const params=[];
+                let count=0;
+                for (let i = 0 ; i<30;++i){
+                    params.push({
+                        groupName:`name${count++}`,
+                        level:Math.floor(Math.random()*3+1),
+                        read:`read${count++}`,
+                        writer:`writer${count++}`,
+                        notice:`notice${count++}`,
+                        Acl:`Acl${count++}`
+                    })
+                }
+                getGroupData=params;
+                total = getGroupData.length;
+                initPagination(getGroupData.length,pageSize);
+                // const params={
+                //     groupName:result.result[0].text,
+                //     rule:1,
+                //     readView:result.result[0].name,
+                //     writerView:result.result[0].sid,
+                //     noticeView:result.result[0].uid,
+                //     Acl:result.result[0].type
+                // };
+
+                // getGroupData= result.result;
+                let queryParams ={
+                    currentPage:current,
+                    pageSize:pageSize
+                };
+                getGroupData= $.transNo(getGroupData,queryParams);
+                getGroupData = pagingProcessing(getGroupData,pageSize);
+                callback();
+            },
+            //请求失败，包含具体的错误信息
+            error : function(e){
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        });
+    }
+
+
+    function initInfo(){
+        getGroupInitValue();
+        setGroupName(ruleInfo,getGroupData);
+        $.each(getGroupData[current-1], function(i,val){
+            if(getGroupData[current-1][i].level===1){
+                $(`#item_${i}_0`).addClass("active")
+            }
+            if(getGroupData[current-1][i].level===2){
+                $(`#item_${i}_1`).addClass("active");
+            }
+            if(getGroupData[current-1][i].level===3){
+                $(`#item_${i}_2`).addClass("active");
+            }
+        });
+        if(checkGroup.length===0){
+            $("#batchButton").attr("disabled",'disabled')
+        }
+    }
+
+    $(document).ready(function () {
+        getAjaxData(initInfo);
+    });
+
+    function getGroupInitValue() {
+        let snmpGroupTable = $("#snmpGroupTable");
+        snmpGroupTable.empty("");
+        snmpGroupTable.append('<tr>' +
+            '<th></th>' +
+            '<th>序号</th>' +
+            '<th>组名称</th>' +
+            '<th>安全级别</th>' +
+            '<th>只读视图</th>' +
+            '<th>读写视图</th>' +
+            '<th>通知视图</th>' +
+            '<th>ACL</th>' +
+            '<th>操作</th>' +
+            '</tr>');
+
+
+        $.each(getGroupData[current-1], function(i,val){
+            const aa = '<tr class="GroupTr">'
+                + '<td><input type="checkbox" class="checkBox"/></td>'
+                + '<td class="sort"></td>'
+                + '<td class="groupName"><input type="text" class="form-control groupNameInput" style="cursor: pointer"/></td>'
+                + '<td class="securityLevel"></td>'
+                + '<td class="readOnly"><input type="text" class="form-control readInput" style="cursor: pointer"/></td>'
+                + '<td class="readWriter"><input type="text" class="form-control writerInput" style="cursor: pointer"/></td>'
+                + '<td class="notice"><input type="text" class="form-control noticeInput" style="cursor: pointer"/></td>'
+                + '<td class="Acl"><input type="text" class="form-control AclInput" style="cursor: pointer"/></td>'
+                + '<td><a class="upData_button">修改</a> <a class="delete_button">删除</a></td>'
+                + '</tr>';
+            snmpGroupTable.append(aa);
+            $('.checkBox').eq(i).attr("value",val.sort);
+            $('.sort').eq(i).text(val.sort);
+            $('.groupNameInput').eq(i).val(val.groupName).addClass("initInput");
+            $('.readInput').eq(i).val(val.read).addClass("initInput");
+            $('.writerInput').eq(i).val(val.writer).addClass("initInput");
+            $('.noticeInput').eq(i).val(val.notice).addClass("initInput");
+            $('.AclInput').eq(i).val(val.Acl).addClass("initInput");
+            $('.securityLevel').eq(i).attr("id",`securityLevelCheck_${i}`);
+        });
+
+        $(".checkBox").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().parent().children(":nth-child(2)").text();
+            if(that.attr("checked") === "checked"){
+                checkGroup.push(parseInt(index));
+                $("#batchButton").attr("disabled",false)
+            }else {
+                checkGroup.splice(checkGroup.indexOf(parseInt(index)),1)
+            }
+
+            console.log(0,checkGroup)
+
+            if(checkGroup.length===0){
+                $("#batchButton").attr("disabled","disabled")
+            }else  $("#batchButton").attr("disabled",false);
+
+        });
+
+        $(".delete_button").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().parent().index();
+            that.parent().parent().remove();
+            getGroupData[current-1].splice(index-1,1);
+            getGroupInitValue();
+            setGroupName(ruleInfo,getGroupData);
+            $.each(getGroupData, function(i,val){
+                if(getGroupData[i].rule===1){
+                    $(`#item_${i}_0`).addClass("active")
+                }
+                if(getGroupData[i].rule===2){
+                    $(`#item_${i}_1`).addClass("active");
+                }
+            });
+        });
+
+        $(".upData_button").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().parent().index();
+            upDataResult=getGroupData[current-1][index-1];
+
+            const mark = document.createElement("div");
+            mark.id='mark';
+            $("body").append(mark);
+            $("#mark").css("width","100%")
+                .css("height","1000px")
+                .css("background","#000000")
+                .css("position","absolute")
+                .css("top","0px")
+                .css("z-index",0)
+                .css("opacity","0.2")
+                .css("left","0px");
+            $(".upDataSnmpModel").fadeIn()
+        });
+
+        $(".groupName").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.groupNameInput').eq(index-1).blur(function() {
+                let upDataValue = $('.groupNameInput').eq(index-1).val();
+                getGroupData[current-1][index-1].groupName=upDataValue
+            }).css("border","none");
+
+        });
+
+        $(".readOnly").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.readInput').eq(index-1).blur(function() {
+                let upDataValue = $('.readInput').eq(index-1).val();
+                getGroupData[current-1][index-1].name=upDataValue
+            }).css("border","none");
+        });
+
+        $(".notice").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.noticeInput').eq(index-1).blur(function() {
+                let upDataValue = $('.noticeInput').eq(index-1).val();
+                getGroupData[current-1][index-1].sid=upDataValue
+            }).css("border","none");
+        });
+
+        $(".readWriter").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.writerInput').eq(index-1).blur(function() {
+                let upDataValue = $('.writerInput').eq(index-1).val();
+                getGroupData[current-1][index-1].uid=upDataValue
+            }).css("border","none");
+        });
+
+        $(".Acl").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.AclInput').eq(index-1).blur(function() {
+                let upDataValue = $('.AclInput').eq(index-1).val();
+                getGroupData[current-1][index-1].type=upDataValue
+            }).css("border","none");
+        })
+    }
+    function closeAddModel() {
+        $(".upDataSnmpModel").fadeOut();
+        $("#mark").remove()
+    }
+
+    function upDataSnmpGroup() {
+        console.log( upDataResult );
+    }
+
+    function batchDelete () {
+        const newArr = getGroupData[current-1].filter((ele,index,arr)=>{
+            return checkGroup.indexOf(ele.sort) === -1
+        });
+        getGroupData[current-1]=newArr;
+        checkGroup=[];
+        console.log(0,getGroupData)
+        let queryParams ={
+            currentPage:1,
+            pageSize:pageSize
+        };
+        let newArrPro = [];
+        for(let i=0 ;i<getGroupData.length;i++){
+            getGroupData[i].forEach((item,index)=>{
+                newArrPro.push(item)
+            })
+        }
+        getGroupData= $.transNo(newArrPro,queryParams);
+        getGroupData = pagingProcessing(getGroupData,pageSize);
+        initPagination(newArrPro.length,pageSize);
+        initInfo()
+    }
+
+</script>
+
+
+
+<div class="page-header">
+    <h2> SNMP Group <small> SNMP Group </small></h2>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading" style="height:40px">
+        <h3 class="panel-title" style="float: left">团体设置</h3>
+        <button onclick="batchDelete()"
+                id="batchButton"
+                class="btn btn-danger"
+                style="float: right;width: 80px;height: 25px; display: flex; justify-content: center; align-items: center">批量删除</button>
+    </div>
+    <table class="table snmpTable" id="snmpGroupTable"></table>
+</div>
+
+<nav aria-label="Page navigation" style="float: right">
+    <ul class="pagination pagination-sm" id="snmpGroupPagination"></ul>
+</nav>
+
+<div class="upDataSnmpModel">
+    <div class="snmpModel_title">
+        <h4 style="display: inline-block">修改</h4>
+        <span style="
+                  display: inline-block;
+                  margin-left: 210px;
+                  cursor: pointer"
+              class="glyphicon glyphicon-remove"
+              onclick="closeAddModel()"
+              aria-hidden="true"></span>
+    </div>
+    <div class="snmpModel_content">
+        确定修改吗?
+        <div style="margin-left: 130px">
+            <button class="btn btn-default" type="submit"  onclick="upDataSnmpGroup()">确定</button>
+            <button class="btn btn-default" type="submit"  onclick="closeAddModel()">取消</button>
+        </div>
+    </div>
+</div>

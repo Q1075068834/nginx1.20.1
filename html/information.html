@@ -1,0 +1,73 @@
+<script src="../html/utils/util.js"></script>
+<script type='text/javascript'>
+    let devInfo ={};
+    function setInfo() {
+        $("#systemName").append(devInfo.systemName);
+        $("#memorySize").append(devInfo.memorySize);
+        setInterval(function(){
+            showTime()
+        },1000);
+        function showTime() {
+            $("#systemTime").empty().append( new Date().toLocaleString());
+        }
+        $("#softwareVersion").append(devInfo.softwareVersion);
+        $("#hardwareVersion").append(devInfo.hardwareVersion);
+        $("#equipmentSerialNumber").append(devInfo.equipmentSerialNumber);
+    }
+    function getAjaxData (callback){
+        $.ajax({
+            type : "GET",
+            contentType: "application/json;charset=UTF-8",
+            url : `http://${$.getIp}/action/devinfo`,
+            //数据，json字符串
+            // data : {
+            //     ...params
+            // },
+            //请求成功
+            success : function(result) {
+                console.log(result);
+                devInfo.systemName=result.systemName;
+                devInfo.memorySize=result.memorySize;
+                devInfo.systemTime=result.systemTime;
+                devInfo.softwareVersion=result.softwareVersion;
+                devInfo.hardwareVersion=result.hardwareVersion;
+                devInfo.equipmentSerialNumber=result.equipmentSerialNumber;
+                devInfo.overallPowerConsumption=result.overallPowerConsumption;
+                callback();
+            },
+            //请求失败，包含具体的错误信息
+            error : function(e){
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        });
+    }
+    $(document).ready(function () {
+        getAjaxData(setInfo)
+    });
+</script>
+
+    <div class="page-header">
+        <h2> 设备信息 <small>device information</small></h2>
+    </div>
+    <div class="panel panel-default">
+
+        <div class="panel-heading">
+            <h3 class="panel-title">设备信息</h3>
+        </div>
+        <div class="panel-body">
+            <div class="row" style="height: 60px; line-height: 60px">
+                <div class="col-md-6"> <div>系统名称:<div id="systemName" style="display: inline"></div></div></div>
+                <div class="col-md-6"> <div>内存大小:<div id="memorySize" style="display: inline"></div></div></div>
+            </div>
+            <div class="row" style="height: 60px; line-height: 60px">
+                <div class="col-md-6"> <div>系统时间:<div id="systemTime" style="display: inline"></div></div></div>
+                <div class="col-md-6"> <div>软件版本:<div id="softwareVersion" style="display: inline"></div></div></div>
+            </div>
+            <div class="row" style="height: 60px; line-height: 60px">
+                <div class="col-md-6"> <div>硬件版本:<div id="hardwareVersion" style="display: inline"></div></div></div>
+                <div class="col-md-6"> <div>整机功耗:<div id="equipmentSerialNumber" style="display: inline"></div></div></div>
+            </div>
+        </div>
+    </div>
+

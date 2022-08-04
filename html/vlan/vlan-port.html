@@ -1,0 +1,339 @@
+<script src="../html/utils/util.js"></script>
+<style type="text/css">
+    *{
+        margin: 0;
+        padding: 0;
+    }
+
+    .vlan {
+        margin-top: 10px;
+    }
+
+    .upData_vLan_button{
+        cursor: pointer;
+    }
+
+    .upDataVLanModel{
+        margin: 0;
+        padding: 0;
+        display: none;
+        position: fixed;
+        background-color: #f2f2f2;
+        border-radius: 5px;
+        border: 1px solid #cccccc;
+        width: 500px;
+        min-height: 300px;
+        top: 30%;
+        left: 35%;
+        z-index: 1;
+    }
+    .vLanModel_title{
+        margin: 0;
+        padding: 6px 0 0 15px;
+        color: #f2f2f2;
+        background-color: #668cf2;
+        border-bottom: 1px solid #cccccc;
+        width: 100%;
+        height: 50px;
+        line-height: 20px;
+    }
+    .vLanModel_content{
+        padding: 15px;
+    }
+    .vLanModel_content > div:not(:nth-child(1)){
+        margin-top: 10px;
+    }
+
+    .vLan-success{
+        position: fixed;
+        bottom: 10px;
+        right: -300px;
+        width: 200px;
+        /*animation:vLan-success 3s ease .1s infinite;*/
+    }
+    @keyframes vLan-success {
+        0%{right: -300px;}
+        100%{right: 10px;}
+    }
+
+</style>
+<script type='text/javascript'>
+    function pagingProcessing( data, pageSize ) {
+        let index = 0;
+        let newArray = [];
+        while(index < data.length) {
+            newArray.push(data.slice(index, index += pageSize));
+        }
+        return newArray;
+    }
+
+    let vLanPortInfo =[];
+
+    let upDataInfo={};
+    let total;
+    let current = 1;
+    let pageSize = 10;
+
+    // const portTypeData =[
+    //     {id:'Access', value:'Access'},
+    //     {id:'Trunk', value:'Trunk'},
+    //     {id:'Hybrid', value:'Hybrid'}];
+
+    let toVLanData =[];
+    let tagVLanData =[];
+    let unTagVLanData =[];
+    let defaultVLanData =[];
+
+    function intoSelect(data,selector){
+        return $.each(data,function (i,val) {
+            let selectorPro = $(selector);
+            selectorPro.append(document.createElement("option"));
+            $(selector).find("option").eq(i).append(val).attr("value",val)
+        });
+    }
+
+    $(document).ready(function () {
+        getAjaxData(getInitValue);
+        getVLanId();
+        // intoSelect(portTypeData,"#portType");
+    });
+
+
+    function getPagination() {
+        let NumberPages = Math.ceil(total/pageSize);
+        for(let i = 0; i<NumberPages;i++){
+            $("#vLanPortPagination").append("<li><a href='#' class='page_change'></a></li>")
+                .find("a").eq(i).append(i+1)
+        }
+        $("#vLanPortPagination").find("li").eq(0).attr("class","active");
+        $(".page_change").on("click",function(obj){
+            $("#vLanPortPagination").find("li").removeClass("active");
+            $(this).parent().attr("class","active");
+            current=$(this).text();
+            getInitValue()
+        });
+    }
+
+    function getAjaxData (callback){
+        $.ajax({
+            type : "GET",
+            contentType: "application/json;charset=UTF-8",
+            url : `http://${$.getIp}/action/portvlan`,
+            success : function(result) {
+                console.log(result);
+                total=result.length;
+                vLanPortInfo = result;
+                vLanPortInfo = pagingProcessing(vLanPortInfo,pageSize);
+                getPagination();
+                callback();
+            },
+            //请求失败，包含具体的错误信息
+            error : function(e){
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        });
+    }
+
+    function getVLanId (){
+        $.ajax({
+            type : "GET",
+            contentType: "application/json;charset=UTF-8",
+            url : `http://${$.getIp}/action/vlan`,
+            success : function(result) {
+                result.forEach(function (ele,index) {
+                    toVLanData.push(ele.id);
+                    tagVLanData.push(ele.id);
+                    unTagVLanData.push(ele.id);
+                    defaultVLanData.push(ele.id)
+                });
+                intoSelect(toVLanData,"#toVLan");
+                intoSelect(tagVLanData,"#tagVLan");
+                intoSelect(unTagVLanData,"#unTagVLan");
+                intoSelect(defaultVLanData,"#defaultVLan")
+            },
+            //请求失败，包含具体的错误信息
+            error : function(e){
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        });
+    }
+
+    function getInitValue() {
+        let devTable = $("#devTable");
+        devTable.empty("");
+        devTable.append('<tr>' +
+            '<th>端口名称</th>' +
+            // '<th>端口类型</th>' +
+            '<th>所属VLAN</th>' +
+            '<th>TAGVLAN</th>' +
+            '<th>UNTAGVLAN</th>' +
+            '<th>缺省VLAN</th>' +
+            '<th>操作</th>' +
+            '</tr>');
+        // let newArr = $.changeName(vLanPortInfo);
+        $.each(vLanPortInfo[current-1], function(i,val){
+            const aa = '<tr id="init">'
+                + '<td>' + val.portName + '</td>'
+                // + '<td>' + val.portType + '</td>'
+                + '<td>' + val.toVLan.toString() + '</td>'
+                + '<td>' + val.tagVLan.toString() + '</td>'
+                + '<td>' + val.UNTagVLan.toString() + '</td>'
+                + '<td>' + val.defaultVLan + '</td>'
+                + '<td><a class="upData_vLan_button">修改</a> </td>'
+                + '</tr>';
+            devTable.append(aa);
+        });
+
+        devTable.css("text-align","center");
+        devTable.find("th").css("text-align","center");
+
+        $(".upData_vLan_button").on("click",function(obj){
+            const mark = document.createElement("div")
+            mark.id='mark';
+            $("body").append(mark);
+            $("#mark").css("width","100%")
+                .css("height","1000px")
+                .css("background","#000000")
+                .css("position","absolute")
+                .css("top","0px")
+                .css("z-index",0)
+                .css("opacity","0.2")
+                .css("left","0px");
+            let vLanId = $(this).parent().parent().children(":first").text();
+            // let portType = $(this).parent().parent().children(":nth-child(2)").text();
+            let toVLan = $(this).parent().parent().children(":nth-child(3)").text();
+            let tagVLan = $(this).parent().parent().children(":nth-child(4)").text();
+            let unTagVLan = $(this).parent().parent().children(":nth-child(5)").text();
+            let defaultVLan = $(this).parent().parent().children(":nth-child(6)").text();
+            upDataInfo.sort = $(this).parent().parent().index();
+            $(".vLan-success").css("animation","none").empty();
+            $("#upDataVLanId").val(vLanId);
+            // $("#portType").val(portType);
+            $("#toVLan").val(toVLan);
+            $("#tagVLan").val(tagVLan);
+            $("#unTagVLan").val(unTagVLan);
+            $("#defaultVLan").val(defaultVLan);
+            $(".upDataVLanModel").fadeIn()
+        });
+    }
+
+    function updataVlan() {
+        let vLanId = $("#upDataVLanId").val();
+        // let portType = $("#portType  option:selected").val();
+        let toVLan = $("#toVLan  option:selected").val();
+        let tagVLan = $("#tagVLan  option:selected").val();
+        let unTagVLan = $("#unTagVLan  option:selected").val();
+        let defaultVLan = $("#defaultVLan  option:selected").val();
+           
+        let portName = {};
+        // if(portType==="Access") {
+        //     portName.portType = 1
+        // }
+        // if(portType==="Trunk") {
+        //     portName.portType = 2
+        // }
+        // if(portType==="Hybrid") {
+        //     portName.portType = 3
+        // }
+        const params ={
+            portName:vLanId,
+            // portType:portName.portType,
+            toVLan,
+            tagVLan,
+            UNTagVLan:unTagVLan,
+            defaultVLan,
+        };
+        console.log("传递的参数",params);
+        $.ajax({
+            type : "POST",
+            contentType: "application/json;charset=UTF-8",
+            url : `http://${$.getIp}/action/portvlan`,
+            data : JSON.stringify(params),
+            success : function(result) {
+                console.log(result);
+            
+                callback();
+            },
+            //请求失败，包含具体的错误信息
+            error : function(e){
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        });
+        vLanPortInfo.splice(upDataInfo.sort-1,1,params);
+        $(".upDataVLanModel").fadeOut();
+        $(".vLan-success").css("animation","vLan-success 2s ease 0s").append("保存成功");
+        $("#mark").remove()
+        getInitValue()
+    }
+
+    function closeAddModel(type) {
+        if(type==="add"){
+            $(".vLanModel").fadeOut()
+        }
+        if(type==="upData"){
+            $(".upDataVLanModel").fadeOut()
+            $("#mark").remove()
+        }
+    }
+
+</script>
+<div class="page-header">
+    <h2> VLanPort配置 <small> VLanPort </small></h2>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">VLan配置</h3>
+    </div>
+    <table class="table vlan" id="devTable"></table>
+</div>
+<nav aria-label="Page navigation" style="float: right">
+    <ul class="pagination pagination-sm" id="vLanPortPagination"></ul>
+</nav>
+
+
+<div class="upDataVLanModel">
+    <div class="vLanModel_title">
+        <h4 style="display: inline-block">修改</h4>
+        <span style="
+                  display: inline-block;
+                  margin-left: 410px;
+                  cursor: pointer"
+              class="glyphicon glyphicon-remove"
+              onclick="closeAddModel('upData')"
+              aria-hidden="true"></span>
+    </div>
+    <div class="vLanModel_content">
+        <div style="display: inline-block;width: 49.5%">
+            <label for="upDataVLanId">VLan Id</label>
+            <input type="text" class="form-control" placeholder="" id="upDataVLanId" >
+        </div>
+<!--        <div style="display: inline-block;width: 49.5%">-->
+<!--            <label for="portType">端口类型</label>-->
+<!--            <select  class="form-control" id="portType" ></select>-->
+<!--        </div>-->
+        <div style="display: inline-block;width: 49.5%">
+            <label for="toVLan">所属VLAN</label>
+            <select  class="form-control" id="toVLan" ></select>
+        </div>
+        <div style="display: inline-block;width: 49.5%">
+            <label for="tagVLan">TAGVLAN</label>
+            <select  class="form-control" id="tagVLan" ></select>
+        </div>
+        <div style="display: inline-block;width: 49.5%">
+            <label for="unTagVLan">UNTAGVLAN</label>
+            <select  class="form-control" id="unTagVLan" ></select>
+        </div>
+        <div style="display: inline-block;width: 49.5%">
+            <label for="defaultVLan">defaultVLAN</label>
+            <select  class="form-control" id="defaultVLan" ></select>
+        </div>
+        <div style="padding-left: 44%;margin-top: 15px">
+            <button class="btn btn-default"  type="submit"  onclick="updataVlan()">保存</button>
+        </div>
+    </div>
+</div>
+<div class="alert alert-success vLan-success" role="alert"></div>

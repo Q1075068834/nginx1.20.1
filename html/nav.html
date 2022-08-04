@@ -1,0 +1,121 @@
+<script type='text/javascript'>
+    $(document).ready(function () {
+        console.log( window.location.href);
+        if( window.location.href.indexOf('vlanCofing')!== -1){
+            $(".child-nav-vlan").show()
+                .children(':first').css("background-color","#6963ee")
+                .children(":first").css("color","#ffffff").css("padding-left","20px")
+        }
+        if( window.location.href.indexOf('vlanPort')!== -1){
+            $(".child-nav-vlan").show()
+                .children().eq(1).css("background-color","#6963ee")
+                .children(":first").css("color","#ffffff").css("padding-left","20px")
+        }
+        if( window.location.href.indexOf('igmpSnooping')!== -1){
+            $(".child-nav-snoop").show()
+                .children(':first').css("background-color","#6963ee")
+                .children(":first").css("color","#ffffff").css("padding-left","20px")
+        }
+        if( window.location.href.indexOf('igmpTable')!== -1){
+            $(".child-nav-snoop").show()
+                .children().eq(1).css("background-color","#6963ee")
+                .children(":first").css("color","#ffffff").css("padding-left","20px")
+        }
+        if( window.location.href.indexOf('snmpConfig')!== -1){
+            $(".child-nav-snmp").show()
+                .children(':first').css("background-color","#6963ee")
+                .children(":first").css("color","#ffffff").css("padding-left","20px")
+        }
+        if( window.location.href.indexOf('snmpCommunities')!== -1){
+            $(".child-nav-snmp").show()
+                .children().eq(1).css("background-color","#6963ee")
+                .children(":first").css("color","#ffffff").css("padding-left","20px")
+        }
+        if( window.location.href.indexOf('snmpGroup')!== -1){
+            $(".child-nav-snmp").show()
+                .children().eq(2).css("background-color","#6963ee")
+                .children(":first").css("color","#ffffff").css("padding-left","20px")
+        }
+        if( window.location.href.indexOf('snmpUser')!== -1){
+            $(".child-nav-snmp").show()
+                .children().eq(3).css("background-color","#6963ee")
+                .children(":first").css("color","#ffffff").css("padding-left","20px")
+        }
+        if( window.location.href.indexOf('snmpTable')!== -1){
+            $(".child-nav-snmp").show()
+                .children().eq(4).css("background-color","#6963ee")
+                .children(":first").css("color","#ffffff").css("padding-left","20px")
+        }
+    });
+    function showChildNav(type) {
+        if(type==='vlan'){
+            $(".child-nav-vlan").toggle(200)
+        }
+        if(type==='snoop'){
+            $(".child-nav-snoop").toggle(200)
+        }
+        if(type==='snmp'){
+            $(".child-nav-snmp").toggle(200)
+        }
+    }
+
+</script>
+
+<style type="text/css">
+    html{  overflow: hidden; }
+    .nav {
+        background-color: #f5f4f6;
+        height: 100%;
+        overflow: hidden;
+        padding: 5%
+    }
+    .child-nav-vlan,.child-nav-snoop,.child-nav-snmp{
+        line-height: 40px;
+        list-style-type: none;
+        display: none;
+    }
+    .child-nav-vlan a,.child-nav-snoop a,.child-nav-snmp a{
+        padding-left: 40px;
+        text-decoration: none;
+    }
+</style>
+    <ul class="nav nav-tabs nav-stacked">
+        <li role="presentation" >
+            <a href="app.html?index" >设备信息</a>
+        </li>
+        <li role="presentation" >
+            <a  onclick="showChildNav('vlan')" href="#">
+                vLan
+                <b class="caret"></b>
+            </a>
+            <ul class="nav-stacked child-nav-vlan">
+                <li><a href="app.html?vlanCofing">vLanConfig</a></li>
+                <li><a href="app.html?vlanPort">vLanPort</a></li>
+            </ul>
+        </li>
+        <li role="presentation" >
+            <a onclick="showChildNav('snoop')" href="#">
+                播组
+                <b class="caret"></b>
+            </a>
+            <ul class="nav-stacked child-nav-snoop">
+                <li><a href="app.html?igmpSnooping">igmpSnooping</a></li>
+                <li><a href="app.html?igmpTable">组播表项显示</a></li>
+            </ul>
+        </li>
+        <li role="presentation" >
+            <a onclick="showChildNav('snmp')" href="#">
+                snmp
+                <b class="caret"></b>
+            </a>
+            <ul class="nav-stacked child-nav-snmp">
+                <li><a href="app.html?snmpConfig">snmp-conf</a></li>
+                <li><a href="app.html?snmpCommunities">communities</a></li>
+                <li><a href="app.html?snmpGroup">group</a></li>
+                <li><a href="app.html?snmpUser">user</a></li>
+                <li><a href="app.html?snmpTable">table</a></li>
+            </ul>
+        </li>
+    </ul>
+
+

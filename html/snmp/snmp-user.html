@@ -1,0 +1,463 @@
+<script src="../html/utils/util.js"></script>
+
+<style type="text/css">
+
+    .snmpTable {
+        margin-top: 10px;
+    }
+
+    .initInput{
+        border: none;
+        box-shadow: none;
+    }
+
+    .active{
+        color: #ffffff;
+        background-color: #64c700;
+    }
+
+    .upData_button,.delete_button {
+        cursor: pointer;
+    }
+
+    .upDataSnmpModel{
+        margin: 0;
+        padding: 0;
+        display: none;
+        position: fixed;
+        background-color: #f2f2f2;
+        border-radius: 5px;
+        border: 1px solid #cccccc;
+        width: 300px;
+        height: 150px;
+        top: 30%;
+        left: 40%;
+        z-index: 1;
+    }
+    .snmpModel_title{
+        margin: 0;
+        padding: 6px 0 0 15px;
+        color: #f2f2f2;
+        background-color: #668cf2;
+        border-bottom: 1px solid #cccccc;
+        width: 100%;
+        height: 50px;
+        line-height: 20px;
+    }
+    .snmpModel_content{
+        padding: 15px;
+    }
+
+</style>
+<script type='text/javascript'>
+    let getUserData =[];
+    let checkUser =[];
+
+    const ruleInfo =[
+        {id:1, value:"不认证不加密"},
+        {id:2, value:"只认证不加密"},
+        {id:2, value:"既认证又加密"}];
+
+    const seriousModeInfo =[
+        {id:1, value:"MD5"},
+        {id:2, value:"SHA"},];
+
+    let upDataResult;
+    let total = 0;
+    let current = 1;
+    let pageSize = 4;
+
+
+    function initPagination(total,pageSize) {
+        let NumberPages = Math.ceil(total/pageSize);
+        let target =  $("#snmpUserPagination");
+        target.empty();
+        for(let i = 0; i<NumberPages;i++){
+            target.append("<li><a href='#' class='page_change'></a></li>")
+                .find("a").eq(i).append(i+1)
+        }
+        target.find("li").eq(0).attr("class","active");
+        $(".page_change").on("click",function(obj){
+            target.find("li").removeClass("active");
+            $(this).parent().attr("class","active");
+            current=$(this).text();
+            getUserInitValue();
+            setUserName(ruleInfo,getUserData,"#securityLevelCheck_","rule");
+            setUserName(seriousModeInfo,getUserData,"#seriousModeCheck_","mode");
+            $.each(getUserData[current-1], function(i,val){
+                debugger
+                if(getUserData[current-1][i].rule===1){
+                    $(`#item_rule_${i}_0`).addClass("active")
+                }
+                if(getUserData[current-1][i].rule===2){
+                    $(`#item_rule_${i}_1`).addClass("active");
+                }
+                if(getUserData[current-1][i].rule===3){
+                    $(`#item_rule_${i}_1`).addClass("active");
+                }
+                if(getUserData[current-1][i].mode===1){
+                    $(`#item_mode_${i}_0`).addClass("active")
+                }
+                if(getUserData[current-1][i].mode===2){
+                    $(`#item_mode_${i}_1`).addClass("active");
+                }
+            });
+        });
+    }
+
+
+    function pagingProcessing( data, pageSize ) {
+        let index = 0;
+        let newArray = [];
+        while(index < data.length) {
+            newArray.push(data.slice(index, index += pageSize));
+        }
+        return newArray;
+    }
+
+    /******
+     * ruleData 多选框自己的数据
+     * UserData 总数据
+     * 遍历两个数据向 每个 securityLevelCheck 添加选择框并修改样式和值
+     * **/
+
+    function setUserName(ruleData,UserData,tdName,value){
+        $.each(UserData[current-1], function(i,val){
+            $.each(ruleData,function (index,ele) {
+                $(`${tdName}${i}`)
+                    .css("display","flex")
+                    .css("flex-direction","column")
+                    .append("<span></span>").find("span").eq(index)
+                    .attr("id",`item_${value}_${i}_${index}`)
+                    .attr("value",index+1)
+                    .css("width","100px")
+                    .css("height","26px")
+                    .css("line-height","26px")
+                    .css("float","left")
+                    .css("margin-top","15px")
+                    .css("margin-left","10px")
+                    .css("border-radius","2px")
+                    .css("cursor","pointer")
+                    .css("border","1px solid #cccccc")
+                    .append(ele.value)
+                    .css("text-align","center")
+                    .on("click", function () {
+                        $(`${tdName}${i}`).find("span").removeClass("active");
+                        $(this).addClass("active");
+                        UserData[current-1][i][value]=$(this).attr("value");
+                        console.log(UserData)
+                    });
+            })
+        });
+    }
+
+    function getAjaxData (callback){
+        $.ajax({
+            type : "GET",
+            contentType: "application/json;charset=UTF-8",
+            url : `https://api.apiopen.top/getJoke`,
+            //数据，json字符串
+            // data : {
+            //     ...params
+            // },
+            //请求成功
+            success : function(result) {
+                console.log(result.result);
+                const params=[];
+                let count=0;
+                for (let i = 0 ; i<30;++i){
+                    params.push({
+                        userName:`name${count++}`,
+                        rule:Math.floor(Math.random()*3+1),
+                        mode:Math.floor(Math.random()*2+1),
+                        password:`read${count++}`,
+                        writer:`writer${count++}`,
+                        notice:`notice${count++}`,
+                        Acl:`Acl${count++}`
+                    })
+                }
+                getUserData=params;
+                total = getUserData.length;
+
+                initPagination(getUserData.length,pageSize);
+                // const params={
+                //     UserName:result.result[0].text,
+                //     rule:1,
+                //     readView:result.result[0].name,
+                //     writerView:result.result[0].sid,
+                //     noticeView:result.result[0].uid,
+                //     Acl:result.result[0].type
+                // };
+
+                // getUserData= result.result;
+                let queryParams ={
+                    currentPage:current,
+                    pageSize:pageSize
+                };
+                getUserData= $.transNo(getUserData,queryParams);
+                getUserData = pagingProcessing(getUserData,pageSize);
+
+                callback();
+            },
+            //请求失败，包含具体的错误信息
+            error : function(e){
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        });
+    }
+
+
+    function initInfo(){
+        getUserInitValue();
+        setUserName(ruleInfo,getUserData,"#securityLevelCheck_","rule");
+        setUserName(seriousModeInfo,getUserData,"#seriousModeCheck_","mode");
+
+        $.each(getUserData[current-1], function(i,val){
+            debugger
+            if(getUserData[current-1][i].rule===1){
+                $(`#item_rule_${i}_0`).addClass("active")
+            }
+            if(getUserData[current-1][i].rule===2){
+                $(`#item_rule_${i}_1`).addClass("active");
+            }
+            if(getUserData[current-1][i].rule===3){
+                $(`#item_rule_${i}_1`).addClass("active");
+            }
+            if(getUserData[current-1][i].mode===1){
+                $(`#item_mode_${i}_0`).addClass("active")
+            }
+            if(getUserData[current-1][i].mode===2){
+                $(`#item_mode_${i}_1`).addClass("active");
+            }
+        });
+        if(checkUser.length===0){
+            $("#batchButton").attr("disabled",'disabled')
+        }
+    }
+
+    $(document).ready(function () {
+        getAjaxData(initInfo);
+    });
+
+    function getUserInitValue() {
+        let snmpUserTable = $("#snmpUserTable");
+        snmpUserTable.empty("");
+        snmpUserTable.append('<tr>' +
+            '<th></th>' +
+            '<th>序号</th>' +
+            '<th>用户名称</th>' +
+            '<th>安全级别</th>' +
+            '<th>用户所在组</th>' +
+            '<th>认证模式</th>' +
+            '<th>认证密码</th>' +
+            '<th>加密模式</th>' +
+            '<th>加密密码</th>' +
+            '<th>ACL</th>' +
+            '<th>操作</th>' +
+            '</tr>');
+
+
+        $.each(getUserData[current-1], function(i,val){
+            const aa = '<tr class="UserTr">'
+                + '<td><input type="checkbox" class="checkBox"/></td>'
+                + '<td class="sort"></td>'
+                + '<td class="UserName"><input type="text" class="form-control userNameInput" style="cursor: pointer"/></td>'
+                + '<td class="securityLevel"></td>'
+                + '<td class="UserName"><input type="password" class="form-control readInput" style="cursor: pointer"/></td>'
+                + '<td class="seriousMode"></td>'
+                + '<td class="authenticationPassword"><input type="password" class="form-control passwordInput" style="cursor: pointer"/></td>'
+                + '<td class="notice"><input type="text" class="form-control noticeInput" style="cursor: pointer"/></td>'
+                + '<td class="Acl"><input type="text" class="form-control AclInput" style="cursor: pointer"/></td>'
+                + '<td><a class="upData_button">修改</a> <a class="delete_button">删除</a></td>'
+                + '</tr>';
+            snmpUserTable.append(aa);
+            $('.checkBox').eq(i).attr("value",val.sort);
+            $('.sort').eq(i).text(val.sort);
+            $('.userNameInput').eq(i).val(val.userName).addClass("initInput");
+            $('.readInput').eq(i).val(val.name).addClass("initInput");
+            $('.seriousMode').eq(i).attr("id",`seriousModeCheck_${i}`);
+            $('.passwordInput').eq(i).val(val.password).addClass("initInput");
+            $('.noticeInput').eq(i).val(val.uid).addClass("initInput");
+            $('.AclInput').eq(i).val(val.type).addClass("initInput");
+            $('.securityLevel').eq(i).attr("id",`securityLevelCheck_${i}`);
+        });
+
+        $(".checkBox").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().parent().children(":nth-child(2)").text();
+            if(that.attr("checked") === "checked"){
+                checkUser.push(parseInt(index));
+                $("#batchButton").attr("disabled",false)
+            }else {
+                checkUser.splice(checkUser.indexOf(parseInt(index)),1)
+            }
+
+            console.log(0,checkUser)
+
+            if(checkUser.length===0){
+                $("#batchButton").attr("disabled","disabled")
+            }else  $("#batchButton").attr("disabled",false);
+
+        });
+
+        $(".delete_button").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().parent().index();
+            that.parent().parent().remove();
+            getUserData[current-1].splice(index-1,1);
+            initInfo()
+        });
+
+        $(".upData_button").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().parent().index();
+            upDataResult=getUserData[current-1][index-1];
+
+            const mark = document.createElement("div");
+            mark.id='mark';
+            $("body").append(mark);
+            $("#mark").css("width","100%")
+                .css("height","1000px")
+                .css("background","#000000")
+                .css("position","absolute")
+                .css("top","0px")
+                .css("z-index",0)
+                .css("opacity","0.2")
+                .css("left","0px");
+            $(".upDataSnmpModel").fadeIn()
+        });
+
+        $(".UserName").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.UserNameInput').eq(index-1).blur(function() {
+                let upDataValue = $('.UserNameInput').eq(index-1).val();
+                getUserData[current-1][index-1].UserName=upDataValue
+            }).css("border","none");
+
+        });
+
+        $(".authenticationPassword").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.passwordInput').eq(index-1).blur(function() {
+                let upDataValue = $('.passwordInput').eq(index-1).val();
+                getUserData[current-1][index-1].sid=upDataValue
+            }).css("border","none");
+        });
+
+        $(".notice").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.noticeInput').eq(index-1).blur(function() {
+                let upDataValue = $('.noticeInput').eq(index-1).val();
+                getUserData[current-1][index-1].sid=upDataValue
+            }).css("border","none");
+        });
+
+        $(".readWriter").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.writerInput').eq(index-1).blur(function() {
+                let upDataValue = $('.writerInput').eq(index-1).val();
+                getUserData[current-1][index-1].uid=upDataValue
+            }).css("border","none");
+        });
+
+        $(".Acl").on("click",function(obj){
+            let that = $(this);
+            let index =that.parent().index();
+            $('.AclInput').eq(index-1).blur(function() {
+                let upDataValue = $('.AclInput').eq(index-1).val();
+                getUserData[current-1][index-1].type=upDataValue
+            }).css("border","none");
+        })
+    }
+    function closeAddModel() {
+        $(".upDataSnmpModel").fadeOut();
+        $("#mark").remove()
+    }
+
+    function upDataSnmpUser() {
+        console.log( upDataResult );
+    }
+
+    /******
+     * 选中的数组存入 checkUser 和原数组做过滤
+     * 重组结构 transNo 重新排序 重新分组
+     *
+     * **/
+
+    function batchDelete () {
+        const newArr = getUserData[current-1].filter((ele,index,arr)=>{
+            return checkUser.indexOf(ele.sort) === -1
+        });
+        getUserData[current-1]=newArr;
+        checkUser=[];
+
+        // 重组结构
+        let queryParams ={
+            currentPage:1,
+            pageSize:pageSize
+        };
+        let newArrPro = [];
+        for(let i=0 ;i<getUserData.length;i++){
+            getUserData[i].forEach((item,index)=>{
+                newArrPro.push(item)
+            })
+        }
+        getUserData= $.transNo(newArrPro,queryParams);
+
+        // 重新分组
+        getUserData = pagingProcessing(getUserData,pageSize);
+
+        // 重新渲染分页
+        initPagination(newArrPro.length,pageSize);
+
+        // 重新渲染初始化数据
+        initInfo()
+    }
+
+</script>
+
+
+
+<div class="page-header">
+    <h2> SNMP User <small> SNMP User </small></h2>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading" style="height:40px">
+        <h3 class="panel-title" style="float: left">团体设置</h3>
+        <button onclick="batchDelete()"
+                id="batchButton"
+                class="btn btn-danger"
+                style="float: right;width: 80px;height: 25px; display: flex; justify-content: center; align-items: center">批量删除</button>
+    </div>
+    <table class="table snmpTable" id="snmpUserTable"></table>
+</div>
+
+<nav aria-label="Page navigation" style="float: right">
+    <ul class="pagination pagination-sm" id="snmpUserPagination"></ul>
+</nav>
+
+<div class="upDataSnmpModel">
+    <div class="snmpModel_title">
+        <h4 style="display: inline-block">修改</h4>
+        <span style="
+                  display: inline-block;
+                  margin-left: 210px;
+                  cursor: pointer"
+              class="glyphicon glyphicon-remove"
+              onclick="closeAddModel()"
+              aria-hidden="true"></span>
+    </div>
+    <div class="snmpModel_content">
+        确定修改吗?
+        <div style="margin-left: 130px">
+            <button class="btn btn-default" type="submit"  onclick="upDataSnmpUser()">确定</button>
+            <button class="btn btn-default" type="submit"  onclick="closeAddModel()">取消</button>
+        </div>
+    </div>
+</div>

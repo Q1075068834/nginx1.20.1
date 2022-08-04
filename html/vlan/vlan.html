@@ -1,0 +1,313 @@
+<script src="../html/utils/util.js"></script>
+<style type="text/css">
+    *{
+        margin: 0;
+        padding: 0;
+    }
+    .add-vLan-button{
+        float: right;
+        margin: 0 10px 10px 0;
+    }
+    .delete_vLan_button,.upData_vLan_button{
+        cursor: pointer;
+    }
+
+    .vlan {
+        margin-top: 10px;
+    }
+    .vLanModel,.upDataVLanModel{
+        margin: 0;
+        padding: 0;
+        display: none;
+        position: fixed;
+        background-color: #f2f2f2;
+        border-radius: 5px;
+        border: 1px solid #cccccc;
+        width: 500px;
+        height: 300px;
+        top: 30%;
+        left: 35%;
+        z-index: 1;
+    }
+    .vLanModel_title{
+        margin: 0;
+        padding: 6px 0 0 15px;
+        color: #f2f2f2;
+        background-color: #668cf2;
+        border-bottom: 1px solid #cccccc;
+        width: 100%;
+        height: 50px;
+        line-height: 20px;
+    }
+    .vLanModel_content{
+        padding: 15px;
+    }
+    .vLanModel_content > div:not(:nth-child(1)){
+        margin-top: 10px;
+    }
+
+    .vLan-success{
+        position: fixed;
+        bottom: 10px;
+        right: -300px;
+        width: 200px;
+        /*animation:vLan-success 3s ease .1s infinite;*/
+    }
+    @keyframes vLan-success {
+        0%{right: -300px;}
+        100%{right: 10px;}
+    }
+
+</style>
+<script type='text/javascript'>
+    let vLanInfo =[];
+    let upDataInfo={};
+    let total = 32;
+    let current = 1;
+    let pageSize = 10;
+
+    function getAjaxData (callback){
+        $.ajax({
+            type : "GET",
+            contentType: "application/json;charset=UTF-8",
+            url : `http://${$.getIp}/action/vlan`,
+            success : function(result) {
+                console.log(result);
+                vLanInfo = result;
+                callback();
+            },
+            //请求失败，包含具体的错误信息
+            error : function(e){
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        });
+    }
+
+    function setAjaxData (params){
+        $.ajax({
+            type : "POST",
+            contentType: "application/json;charset=UTF-8",
+            url : `http://${$.getIp}/action/vlan`,
+            data : JSON.stringify(params),
+            success : function(result) {
+                console.log(result);
+                $(".vLan-success").css("animation","vLan-success 2s ease 0s").append("新增成功");
+            },
+            //请求失败，包含具体的错误信息
+            error : function(e){
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        getAjaxData(getInitValue)
+    });
+
+    
+    function getPagination() {
+        let NumberPages = Math.ceil(total/pageSize);
+        for(let i = 0; i<NumberPages;i++){
+            $("#vLanPagination").append("<li><a href='#' class='page_change'></a></li>")
+                .find("a").eq(i).append(i+1)
+        }
+        $("#vLanPagination").find("li").eq(0).attr("class","active");
+        $(".page_change").on("click",function(obj){
+            $("#vLanPagination").find("li").removeClass("active");
+            $(this).parent().attr("class","active");
+            current=$(this).text();
+        });
+    }
+
+    function getInitValue() {
+
+        let devTable = $("#devTable");
+        devTable.empty("");
+
+        devTable.append('<tr><th>VLAN ID</th><th>描述</th><th>端口成员</th><th>操作</th></tr>');
+        $.each(vLanInfo, function(i,val){
+            const aa = '<tr class="init">'
+                + '<td>' + val.id + '</td>'
+                + '<td>' + val.describe + '</td>'
+                + '<td>' + val.portMember + '</td>'
+                + '<td> <a class="upData_vLan_button">修改</a> ' +
+                '<a class="delete_vLan_button">删除</a></td>'
+                + '</tr>';
+            devTable.append(aa);
+            // $('a').attr("id", i +"_"+ "delete");
+        });
+        devTable.css("text-align","center");
+        devTable.find("th").css("text-align","center");
+
+
+        $(".delete_vLan_button").on("click",function(obj){
+            let vLanId = $("#upDataVLanId").val();
+            const params = {
+                flag:2,
+                id:parseInt(vLanId)
+            };
+            setAjaxData(params)
+        });
+
+        $(".upData_vLan_button").on("click",function(obj){
+            const mark = document.createElement("div")
+            mark.id='mark';
+            $("body").append(mark);
+            $("#mark").css("width","100%")
+                .css("height","1000px")
+                .css("background","#000000")
+                .css("position","absolute")
+                .css("top","0px")
+                .css("z-index",0)
+                .css("opacity","0.2")
+                .css("left","0px");
+            let vLanId = $(this).parent().parent().children(":first").text();
+            let vLanDescribe = $(this).parent().parent().children(":nth-child(2)").text();
+            console.log($(this).parent().parent().index())
+            upDataInfo.sort = $(this).parent().parent().index();
+            $(".vLan-success").css("animation","none").empty()
+            $("#upDataVLanId").val(vLanId);
+            $("#upDataVLanDescribe").val(vLanDescribe);
+            $(".upDataVLanModel").fadeIn()
+        });
+    }
+
+
+
+    function showAddModel() {
+        $(".vLan-success").css("animation","none").empty();
+        const mark = document.createElement("div")
+        mark.id='mark';
+        $("body").append(mark);
+        $("#mark").css("width","100%")
+            .css("height","1000px")
+            .css("background","#000000")
+            .css("position","absolute")
+            .css("top","0px")
+            .css("z-index",0)
+            .css("opacity","0.2")
+            .css("left","0px");
+        $(".vLanModel").fadeIn()
+    }
+
+    function saveVLan() {
+        let vLanId = $("#vLanId").val();
+        let vLanDescribe = $("#vLanDescribe").val();
+        const params ={
+            flag:1,
+            id:parseInt(vLanId),
+            describe:vLanDescribe,
+            portMember:''
+        };
+        setAjaxData(params)
+        vLanInfo.push(params);
+        $(".vLanModel").fadeOut();
+        getAjaxData(getInitValue)
+        $("#mark").remove()
+    }
+
+
+    function updataVlan() {
+        let vLanId = $("#upDataVLanId").val();
+        let vLanDescribe = $("#upDataVLanDescribe").val();
+        const params ={
+            flag:3,
+            id:parseInt(vLanId),
+            describe:vLanDescribe,
+            portMember:''
+        };
+        // console.log(upDataInfo)
+        setAjaxData(params)
+        // vLanInfo.splice(upDataInfo.sort-1,1,params);
+        // console.log(vLanInfo)
+        $(".upDataVLanModel").fadeOut();
+        $(".vLan-success").css("animation","vLan-success 2s ease 0s").append("保存成功");
+        getAjaxData(getInitValue)
+        $("#mark").remove()
+    }
+
+    function closeAddModel(type) {
+        if(type==="add"){
+            $(".vLanModel").fadeOut();
+            $("#mark").remove()
+        }
+        if(type==="upData"){
+            $(".upDataVLanModel").fadeOut();
+            $("#mark").remove()
+        }
+    }
+
+</script>
+
+<div class="page-header">
+    <h2> VLan配置 <small> VLan </small>
+        <button class="btn btn-primary add-vLan-button" type="submit" id="add_vLan" onclick="showAddModel()">新增</button>
+    </h2>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">VLan配置</h3>
+    </div>
+
+    <table class="table vlan" id="devTable"></table>
+
+    <div class="vLanModel">
+        <div class="vLanModel_title">
+            <h4 style="display: inline-block">新增</h4>
+            <span style="
+                  display: inline-block;
+                  margin-left: 410px;
+                  cursor: pointer"
+                  class="glyphicon glyphicon-remove"
+                  onclick="closeAddModel('add')"
+                  aria-hidden="true"></span>
+        </div>
+        <div class="vLanModel_content">
+            <div>
+                <label for="vLanId">VLan Id</label>
+                <input type="text" class="form-control" placeholder="" id="vLanId" >
+            </div>
+            <div>
+                <label for="vLanDescribe">描述</label>
+                <textarea class="form-control" rows="3" id="vLanDescribe" ></textarea>
+            </div>
+            <div style="padding-left: 44%;margin-top: 15px">
+                <button class="btn btn-default" type="submit"  onclick="saveVLan()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="upDataVLanModel">
+        <div class="vLanModel_title">
+            <h4 style="display: inline-block">修改</h4>
+            <span style="
+                  display: inline-block;
+                  margin-left: 410px;
+                  cursor: pointer"
+                  class="glyphicon glyphicon-remove"
+                  onclick="closeAddModel('upData')"
+                  aria-hidden="true"></span>
+        </div>
+        <div class="vLanModel_content">
+            <div>
+                <label for="vLanId">VLan Id</label>
+                <input type="text" class="form-control" placeholder="" id="upDataVLanId" >
+            </div>
+            <div>
+                <label for="vLanDescribe">描述</label>
+                <textarea class="form-control" rows="3" id="upDataVLanDescribe" ></textarea>
+            </div>
+            <div style="padding-left: 44%;margin-top: 15px">
+                <button class="btn btn-default" type="submit"  onclick="updataVlan()">保存</button>
+            </div>
+        </div>
+    </div>
+    <div class="alert alert-success vLan-success" role="alert"></div>
+
+    <nav aria-label="Page navigation" style="float: right">
+        <ul class="pagination pagination-sm" id="vLanPagination"></ul>
+    </nav>
+</div>

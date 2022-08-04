@@ -1,0 +1,133 @@
+
+<style type="text/css">
+    *{
+        margin: 0;
+        padding: 0;
+    }
+
+    .snoopingTable {
+        margin-top: 10px;
+    }
+
+    .snoopingTableModel_content > div:not(:nth-child(1)){
+        margin-top: 10px;
+    }
+
+    .snoopingTable-success{
+        position: fixed;
+        bottom: 10px;
+        right: -300px;
+        width: 200px;
+        /*animation:snoopingTable-success 3s ease .1s infinite;*/
+    }
+    @keyframes snoopingTable-success {
+        0%{right: -300px;}
+        100%{right: 10px;}
+    }
+
+</style>
+<script type='text/javascript'>
+    const snoopingTableInfo =[{
+        vLanId:'1',
+        sourceAddress: "10.20.22.22",
+        groupAddress: "10.20.22.222",
+        routerPort: 9090,
+        memberPort: 2222,
+    }];
+
+    let upDataInfo={};
+    let total = 62;
+    let current = 1;
+    let pageSize = 10;
+
+    function getPagination(){
+        let NumberPages = Math.ceil(total/pageSize);
+        for(let i = 0; i<NumberPages;i++){
+            $("#snoopingTablePagination").append("<li><a href='#' class='page_change'></a></li>")
+                .find("a").eq(i).append(i+1)
+        }
+        $("#snoopingTablePagination").find("li").eq(0).attr("class","active");
+        $(".page_change").on("click",function(obj){
+            $("#snoopingTablePagination").find("li").removeClass("active");
+            $(this).parent().attr("class","active");
+            current=$(this).text();
+        });
+    }
+
+    $(document).ready(function () {
+        getInitValue();
+    });
+
+    function getInitValue() {
+        let devTable = $("#devTable");
+        devTable.empty("");
+        devTable.append('<tr>' +
+            '<th>VLAN ID</th>' +
+            '<th>源地址</th>' +
+            '<th>组地址</th>' +
+            '<th>路由器端口</th>' +
+            '<th>成员端口</th>' +
+            '</tr>');
+        $.each(snoopingTableInfo, function(i,val){
+            const aa = '<tr id="init">'
+                + '<td>' + val.vLanId + '</td>'
+                + '<td>' + val.sourceAddress + '</td>'
+                + '<td>' + val.groupAddress + '</td>'
+                + '<td>' + val.routerPort + '</td>'
+                + '<td>' + val.memberPort + '</td>'
+                + '</tr>';
+            devTable.append(aa);
+        });
+
+        $(".upData_snoopingTable_button").on("click",function(obj){
+            const mark = document.createElement("div");
+            mark.id='mark';
+            $("body").append(mark);
+            $("#mark").css("width","100%")
+                .css("height","1000px")
+                .css("background","#000000")
+                .css("position","absolute")
+                .css("top","0px")
+                .css("z-index",0)
+                .css("opacity","0.2")
+                .css("left","0px");
+            let vLanId = $(this).parent().parent().children(":first").text();
+            let IGMPsnoopingTable = $(this).parent().parent().children(":nth-child(2)").text();
+            let edition = $(this).parent().parent().children(":nth-child(3)").text();
+            let routerTime = $(this).parent().parent().children(":nth-child(4)").text()
+                .slice(0,$(this).parent().parent().children(":nth-child(4)").text().length-1);
+            let memberTime = $(this).parent().parent().children(":nth-child(5)").text()
+                .slice(0,$(this).parent().parent().children(":nth-child(5)").text().length-1);
+            let leaveTime = $(this).parent().parent().children(":nth-child(6)").text()
+                .slice(0,$(this).parent().parent().children(":nth-child(6)").text().length-1);
+            upDataInfo.sort = $(this).parent().parent().index();
+            $(".snoopingTable-success").css("animation","none").empty();
+            $("#vLanId").val(vLanId);
+            $("#IGMPsnoopingTable").val(IGMPsnoopingTable);
+            $("#edition").val(edition);
+            $("#routerTime").val(routerTime);
+            $("#memberTime").val(memberTime);
+            $("#leaveTime").val(leaveTime);
+            $(".upDatasnoopingTableModel").fadeIn()
+        });
+    }
+
+</script>
+
+    <div class="page-header">
+        <h2> 组播表显示 <small> 组播表显示 </small></h2>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">组播表显示</h3>
+        </div>
+
+        <table class="table snoopingTable" id="devTable"></table>
+
+    </div>
+    <nav aria-label="Page navigation" style="float: right">
+        <ul class="pagination pagination-sm" id="snoopingTablePagination"></ul>
+    </nav>
+
+    <div class="alert alert-success snoopingTable-success" role="alert"></div>
+
